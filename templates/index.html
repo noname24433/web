@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhagavad Gita Wisdom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>Bhagavad Gita Wisdom</h1>
+        <div class="header-image"></div>
+    </div>
+
+    <div class="container">
+        <button class="generate-btn" onclick="fetchRandomVerse()">Get Divine Wisdom</button>
+
+        <div class="verse-card" id="verseContainer" style="display: none;">
+            <h3>Chapter <span id="verseChapter"></span>, Verse <span id="verseNumber"></span></h3>
+            <div class="sanskrit" id="verseText"></div>
+            <div class="transliteration" id="verseTransliteration"></div>
+            <div class="meanings" id="verseMeanings"></div>
+            <button id="explainBtn" onclick="fetchDeepMeaning()" style="display: none;">Reveal Deeper Meaning</button>
+
+            <div id="deepMeaning" style="display: none;">
+                <div class="loading" id="loading">Connecting to divine wisdom...</div>
+                <div class="explanation">
+                    <h3>Divine Insight:</h3>
+                    <p id="aiExplanation"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Find peace in ancient wisdom | Created with devotion</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
