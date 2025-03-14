@@ -3,71 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bhagavad Gita Shloka</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .shloka {
-            font-size: 1.2em;
-            margin-bottom: 20px;
-        }
-        .button {
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        .button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    <title>Bhagavad Gita Wisdom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>भगवद्गीता</h1>
+            <p>Daily Wisdom</p>
+        </header>
 
-<div class="container">
-    <div class="shloka" id="shloka">
-        <!-- Shloka text will be inserted here -->
+        <div class="card">
+            <div class="verse-meta">
+                <span>Chapter <span id="chapter">-</span></span>
+                <span>Verse <span id="verse">-</span></span>
+            </div>
+            <div class="shloka" id="shloka"></div>
+            <div class="transliteration" id="transliteration"></div>
+            <div class="meaning" id="meaning"></div>
+        </div>
+
+        <div class="controls">
+            <button id="new-verse" class="btn">Get New Verse</button>
+            <button id="explain" class="btn secondary">Deeper Explanation</button>
+        </div>
+
+        <div class="modal" id="reportModal">
+            <div class="modal-content">
+                <h3>Report Issue</h3>
+                <textarea id="reportText" placeholder="Describe the issue..."></textarea>
+                <div class="modal-actions">
+                    <button id="submitReport" class="btn">Submit</button>
+                    <button class="btn secondary" id="closeModal">Cancel</button>
+                </div>
+                <div id="reportStatus"></div>
+            </div>
+        </div>
+        <button id="reportBtn" class="btn floating">Report Issue</button>
     </div>
-    <button class="button" id="deeperMeaningBtn">Deeper Meaning</button>
-</div>
 
-<script>
-    // Define the chapter and verse
-    const chapter = 1;
-    const verse = 37;
-
-    // Shloka text (for demonstration purposes)
-    const shlokaText = `O Janārdana, although these men, their hearts overtaken by greed, see no fault in killing one's family or quarreling with friends, why should we, who can see the crime in destroying a family, engage in these acts of sin?`;
-
-    // Insert the shloka text into the HTML
-    document.getElementById('shloka').innerText = shlokaText;
-
-    // Add event listener to the button
-    document.getElementById('deeperMeaningBtn').addEventListener('click', function() {
-        // Construct the URL
-        const url = `https://vedabase.io/en/library/bg/${chapter}/${verse}/`;
-        // Redirect to the URL
-        window.location.href = url;
-    });
-</script>
-
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
