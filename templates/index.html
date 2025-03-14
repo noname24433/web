@@ -1,55 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Daily wisdom from the Bhagavad Gita - Get a random verse with translation and meaning">
-  <title>Bhagavad Gita Wisdom</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&display=swap">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhagavad Gita Shloka</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .shloka {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-  <header class="header">
-    <h1>भगवद्गीता</h1>
-    <p>Daily Wisdom Generator</p>
-  </header>
-  <main class="container">
-    <button id="generateBtn" class="btn">🕉️ Generate Verse</button>
-    <article id="verseCard" class="card">
-      <div class="meta">
-        <span>Chapter <span id="chapter"></span></span>
-        <span>Verse <span id="verse"></span></span>
-      </div>
-      <p id="shloka" class="sanskrit"></p>
-      <p id="transliteration"></p>
-      <p id="meaning"></p>
-      <div class="actions">
-        <!-- Single explanation button -->
-        <button id="explanationBtn" class="btn secondary">Deeper Explanation</button>
-      </div>
-      <!-- Disclaimer note -->
-      <p class="disclaimer">Note: The translation provided may differ from other sources.</p>
-    </article>
-    <!-- Report Modal -->
-    <div id="reportModal" class="modal">
-      <div class="modal-content">
-        <span class="modal-close">&times;</span>
-        <h3>Report an Issue</h3>
-        <p>If you find any errors with the verse or its translation, please describe the issue below:</p>
-        <textarea id="reportText" placeholder="Describe the issue..." maxlength="500"></textarea>
-        <div class="modal-buttons">
-          <button id="submitReport" class="btn">Submit</button>
-          <button class="btn secondary modal-close-btn">Cancel</button>
-        </div>
-        <p id="reportStatus"></p>
-      </div>
+
+<div class="container">
+    <div class="shloka" id="shloka">
+        <!-- Shloka text will be inserted here -->
     </div>
-    <!-- Report Button (fixed at bottom right) -->
-    <button id="reportBtn" class="btn floating-btn">⚠️ Report</button>
-  </main>
-  <footer class="footer">
-    <p>Developed with ❤️ for spiritual seekers</p>
-  </footer>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <button class="button" id="deeperMeaningBtn">Deeper Meaning</button>
+</div>
+
+<script>
+    // Define the chapter and verse
+    const chapter = 1;
+    const verse = 37;
+
+    // Shloka text (for demonstration purposes)
+    const shlokaText = `O Janārdana, although these men, their hearts overtaken by greed, see no fault in killing one's family or quarreling with friends, why should we, who can see the crime in destroying a family, engage in these acts of sin?`;
+
+    // Insert the shloka text into the HTML
+    document.getElementById('shloka').innerText = shlokaText;
+
+    // Add event listener to the button
+    document.getElementById('deeperMeaningBtn').addEventListener('click', function() {
+        // Construct the URL
+        const url = `https://vedabase.io/en/library/bg/${chapter}/${verse}/`;
+        // Redirect to the URL
+        window.location.href = url;
+    });
+</script>
+
 </body>
 </html>
