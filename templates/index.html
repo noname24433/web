@@ -22,6 +22,8 @@
             <div class="shloka" id="shloka"></div>
             <div class="transliteration" id="transliteration"></div>
             <div class="meaning" id="meaning"></div>
+            <!-- Note: The translation may vary depending on the edition -->
+            <p class="note">Note: The translation may vary depending on the edition.</p>
         </div>
 
         <div class="controls">
@@ -29,18 +31,6 @@
             <button id="explain" class="btn secondary">Deeper Explanation</button>
         </div>
 
-        <div class="modal" id="reportModal">
-            <div class="modal-content">
-                <h3>Report Issue</h3>
-                <textarea id="reportText" placeholder="Describe the issue..."></textarea>
-                <div class="modal-actions">
-                    <button id="submitReport" class="btn">Submit</button>
-                    <button class="btn secondary" id="closeModal">Cancel</button>
-                </div>
-                <div id="reportStatus"></div>
-            </div>
-        </div>
-        <button id="reportBtn" class="btn floating">Report Issue</button>
     </div>
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
