@@ -1,108 +1,137 @@
 from flask import Flask, render_template, jsonify, request
+import csv
 import random
-import json
+from pathlib import Path
+from datetime import datetime
+import logging
 import os
-import requests
+import requests  # Ensure this package is installed via pip
 
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 
-# Constants for the free AI API
-HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-# If you want to use an API key for higher rate limits (still free), uncomment below
-# HUGGINGFACE_API_KEY = os.environ.get('HUGGINGFACE_API_KEY', '')
-# HEADERS = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-HEADERS = {}  # No API key needed for basic usage
+# Configure logging for deployed environments (e.g., on Render)
+if os.environ.get('RENDER'):
+    import sys
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
 
+# Define chapter verse limits (as per the Bhagavad Gita)
+CHAPTER_VERSE_LIMITS = {
+    1: 46, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
+    7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
+    13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
+}
 
-# Load Bhagavad Gita verses
-def load_verses():
+# Global cache for verses
+VERSES = []
+
+def load_valid_verses():
+    """Load and validate verses from the CSV file."""
+    csv_path = Path(__file__).parent / 'data' / 'Bhagwad_Gita.csv'
+    valid = []
     try:
-        with open('data/verses.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # Fallback path for PythonAnywhere
-        with open(os.path.join(os.path.dirname(__file__), 'data/verses.json'), 'r', encoding='utf-8') as f:
-            return json.load(f)
+        with open(csv_path, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            required = {'Chapter', 'Verse', 'Shloka', 'Transliteration', 'EngMeaning'}
+            if not required.issubset(set(reader.fieldnames or [])):
+                app.logger.error("CSV is missing required columns.")
+                return valid
+            for row in reader:
+                try:
+                    ch = int(row['Chapter'])
+                    vs = int(row['Verse'])
+                    if ch in CHAPTER_VERSE_LIMITS and 0 < vs <= CHAPTER_VERSE_LIMITS[ch]:
+                        valid.append({
+                            'chapter': ch,
+                            'verse': vs,
+                            'shloka': row['Shloka'].strip(),
+                            'transliteration': row['Transliteration'].strip(),
+                            'meaning': row['EngMeaning'].strip()
+                        })
+                except Exception as e:
+                    app.logger.warning(f"Skipping row: {e}")
+                    continue
+    except Exception as e:
+        app.logger.error(f"Error reading CSV: {e}")
+    app.logger.info(f"Loaded {len(valid)} valid verses.")
+    return valid
 
+# Load verses on startup
+VERSES = load_valid_verses()
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses."""
+    headers = {
+        'Content-Security-Policy': "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+    }
+    response.headers.update(headers)
+    return response
 
 @app.route('/')
-def index():
+def home():
+    """Render the main page."""
     return render_template('index.html')
 
-
-@app.route('/get_verse')
+@app.route('/api/verse')
 def get_verse():
-    verses = load_verses()
-    verse = random.choice(verses)
-    return jsonify(verse)
+    """Return a random verse in JSON format."""
+    global VERSES
+    if not VERSES:
+        VERSES = load_valid_verses()
+    if not VERSES:
+        return jsonify({'error': 'No verses available.'}), 500
+    return jsonify(random.choice(VERSES))
 
-
-@app.route('/explain', methods=['POST'])
-def explain_verse():
-    verse_text = request.json.get('text')
-
+@app.route('/report', methods=['POST'])
+def handle_report():
+    """Handle report submissions."""
     try:
-        # Prepare the prompt for Hugging Face model
-        prompt = f"""<s>[INST] You are a Hindu spiritual guide explaining Bhagavad Gita verses. 
-        Provide deep philosophical meaning in simple English. Keep it under 150 words. 
-        Focus on practical life applications.
-
-        Explain the deep meaning of this Bhagavad Gita verse:
-
-        {verse_text} [/INST]"""
-
-        # Make request to Hugging Face API
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": 200,
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "return_full_text": False
-            }
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid request.'}), 400
+        message = data.get('message', '').strip()
+        if not message or len(message) > 500:
+            return jsonify({'error': 'Message is required and must be under 500 characters.'}), 400
+        report = {
+            'timestamp': datetime.now().isoformat(),
+            'message': message,
+            'ip': request.remote_addr
         }
-        response = requests.post(HUGGINGFACE_API_URL, headers=HEADERS, json=payload)
-
-        # Process the response
-        if response.status_code == 200:
-            # Extract the generated text
-            result = response.json()
-            if isinstance(result, list) and len(result) > 0:
-                explanation = result[0].get("generated_text", "").strip()
-            else:
-                explanation = result.get("generated_text", "").strip()
-        else:
-            # Fallback option using a simpler free API if available
-            explanation = get_fallback_explanation(verse_text)
+        reports_dir = Path(__file__).parent / 'data' / 'reports'
+        reports_dir.mkdir(exist_ok=True)
+        report_file = reports_dir / 'reports.csv'
+        file_exists = report_file.exists()
+        with open(report_file, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=report.keys())
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(report)
+        return jsonify({'success': True})
     except Exception as e:
-        print(f"AI Error: {e}")
-        explanation = "Divine wisdom is temporarily unavailable. Please contemplate the verse directly."
+        app.logger.error(f"Report submission failed: {e}")
+        return jsonify({'error': 'Report submission failed.'}), 500
 
-    return jsonify({'explanation': explanation})
-
-
-def get_fallback_explanation(verse_text):
-    """
-    A simple function that provides basic insights for common Bhagavad Gita themes
-    when the API fails or is unavailable
-    """
-    # Dictionary of common themes and their explanations
-    themes = {
-        "धर्म": "This verse speaks to the nature of dharma (duty). It reminds us that adhering to our natural duties with sincerity brings inner peace. Each person has unique responsibilities based on their nature and position in life.",
-        "कर्म": "The verse highlights karma (action) and its importance. All actions create consequences, but by performing our duties selflessly, we can achieve freedom from karmic bondage.",
-        "योग": "This teaching emphasizes yoga - the path of union with the divine. Through disciplined practice and meditation, one can transcend the limitations of the material world.",
-        "शांति": "Peace comes from accepting life's dualities. This verse reminds us that by maintaining equanimity in pleasure and pain, we find true spiritual strength.",
-        "भक्ति": "The verse illuminates the path of devotion. By surrendering to the divine with love and trust, we find protection and guidance through life's challenges."
-    }
-
-    # Check if any key themes are in the verse
-    for theme, explanation in themes.items():
-        if theme in verse_text:
-            return explanation
-
-    # Default explanation if no themes match
-    return "This verse contains profound wisdom about the nature of reality and our spiritual journey. It encourages us to look beyond material attachments, practice self-discipline, and recognize our eternal spiritual nature beyond the temporary physical body."
-
+@app.route('/check_url')
+def check_url():
+    """Server-side endpoint to check if an external URL is available."""
+    url = request.args.get('url')
+    if not url:
+        return jsonify({'ok': False, 'error': 'No URL provided.'}), 400
+    try:
+        resp = requests.head(url, timeout=3)
+        if resp.status_code == 200:
+            return jsonify({'ok': True})
+        else:
+            return jsonify({'ok': False, 'status': resp.status_code})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deeper Explanation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header class="header">
+        <h1>Deeper Explanation</h1>
+    </header>
+    <main class="container">
+        <h2>Chapter {{ chapter }}, Verse {{ verse }}</h2>
+        {% if type == 'shloka' %}
+            <p>This section provides a deeper explanation of the shloka. Here you can explore its language, poetic devices, and traditional interpretations.</p>
+        {% elif type == 'verse' %}
+            <p>This section provides a deeper explanation of the verse’s meaning, context, and philosophical insights. Reflect upon the wisdom of the Gita.</p>
+        {% endif %}
+        <a href="{{ url_for('home') }}" class="btn secondary">Go Back</a>
+    </main>
+</body>
+</html>
