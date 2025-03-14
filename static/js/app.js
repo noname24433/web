@@ -1,171 +1,121 @@
-class GitaApp {
-  constructor() {
-    this.dom = {
-      generateBtn: document.getElementById('generateBtn'),
-      verseCard: document.getElementById('verseCard'),
-      chapter: document.getElementById('chapter'),
-      verse: document.getElementById('verse'),
-      shloka: document.getElementById('shloka'),
-      transliteration: document.getElementById('transliteration'),
-      meaning: document.getElementById('meaning'),
-      explanationBtn: document.getElementById('explanationBtn'),
-      reportBtn: document.getElementById('reportBtn'),
-      reportModal: document.getElementById('reportModal'),
-      reportText: document.getElementById('reportText'),
-      submitReport: document.getElementById('submitReport'),
-      reportStatus: document.getElementById('reportStatus')
-    };
-    this.currentVerse = null;
-    this.init();
-  }
+from flask import Flask, render_template, jsonify, request
+import csv
+import random
+from pathlib import Path
+from datetime import datetime
+import logging
+import os
+import requests
 
-  init() {
-    this.dom.generateBtn.addEventListener('click', () => this.loadVerse());
-    this.dom.explanationBtn.addEventListener('click', () => this.redirectExplanation());
-    this.dom.reportBtn.addEventListener('click', () => this.toggleModal(true));
-    document.querySelector('.modal-close').addEventListener('click', () => this.toggleModal(false));
-    document.querySelector('.modal-close-btn').addEventListener('click', () => this.toggleModal(false));
-    this.dom.submitReport.addEventListener('click', () => this.submitReport());
-    this.dom.reportModal.addEventListener('click', (e) => {
-      if (e.target === this.dom.reportModal) this.toggleModal(false);
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') this.toggleModal(false);
-    });
-    this.loadInitialVerse();
-  }
+app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 
-  async loadInitialVerse() {
-    try {
-      await this.loadVerse();
-    } catch (error) {
-      console.error(error);
-      this.showError("Couldn't load verse. Please try again later.");
-    }
-  }
+# Configure logging for Render
+if os.environ.get('RENDER'):
+    import sys
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
 
-  async loadVerse() {
-    try {
-      this.dom.generateBtn.disabled = true;
-      this.dom.generateBtn.innerHTML = '<span class="loading"></span>';
-      const response = await fetch('/api/verse');
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
-      const verse = await response.json();
-      this.currentVerse = verse;
-      this.dom.chapter.textContent = verse.chapter;
-      this.dom.verse.textContent = verse.verse;
-      this.dom.shloka.textContent = verse.shloka;
-      this.dom.transliteration.textContent = verse.transliteration;
-      this.dom.meaning.textContent = verse.meaning;
-      this.dom.verseCard.classList.add('active');
-      this.dom.generateBtn.disabled = false;
-      this.dom.generateBtn.textContent = '🕉️ Generate Verse';
-    } catch (error) {
-      console.error(error);
-      this.dom.generateBtn.disabled = false;
-      this.dom.generateBtn.textContent = '🕉️ Try Again';
-      this.showError("Couldn't load verse. Please try again.");
-    }
-  }
-
-  /**
-   * Check a URL's availability using the /check_url endpoint.
-   * @param {string} url - The URL to verify.
-   * @returns {Promise<boolean>}
-   */
-  async checkUrl(url) {
-    try {
-      const res = await fetch(`/check_url?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      return data.ok;
-    } catch (error) {
-      console.error("URL check error:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Redirect to an external explanation page.
-   * Primary: Vedabase.io; Fallback: Bhagavad-Gita.org.
-   */
-  async redirectExplanation() {
-    if (!this.currentVerse) {
-      alert("Please generate a verse first.");
-      return;
-    }
-    const { chapter, verse } = this.currentVerse;
-    const primaryUrl = `https://vedabase.io/en/library/bg/${chapter}/${verse}/`;
-    const fallbackUrl = `https://www.bhagavad-gita.org/gita/verse.php?verse=${chapter}.${verse}`;
-
-    if (await this.checkUrl(primaryUrl)) {
-      window.location.href = primaryUrl;
-    } else if (await this.checkUrl(fallbackUrl)) {
-      window.location.href = fallbackUrl;
-    } else {
-      alert("Deeper explanation resource is currently unavailable.");
-    }
-  }
-
-  showError(message) {
-    const errorEl = document.createElement('div');
-    errorEl.className = 'error-message';
-    errorEl.textContent = message;
-    errorEl.style.backgroundColor = '#ffebee';
-    errorEl.style.color = '#c62828';
-    errorEl.style.padding = '1rem';
-    errorEl.style.borderRadius = '4px';
-    errorEl.style.margin = '1rem 0';
-    errorEl.style.textAlign = 'center';
-    const container = document.querySelector('.container');
-    container.insertBefore(errorEl, this.dom.verseCard);
-    setTimeout(() => errorEl.remove(), 5000);
-  }
-
-  toggleModal(show) {
-    if (show) {
-      this.dom.reportModal.classList.add('active');
-      this.dom.reportText.focus();
-    } else {
-      this.dom.reportModal.classList.remove('active');
-      this.dom.reportStatus.textContent = '';
-      this.dom.reportStatus.className = '';
-    }
-  }
-
-  async submitReport() {
-    const message = this.dom.reportText.value.trim();
-    if (!message) {
-      this.dom.reportStatus.textContent = 'Please enter a message.';
-      this.dom.reportStatus.className = 'error';
-      return;
-    }
-    try {
-      this.dom.submitReport.disabled = true;
-      this.dom.reportStatus.textContent = 'Submitting...';
-      this.dom.reportStatus.className = '';
-      const response = await fetch('/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          verseInfo: this.currentVerse ? `Chapter ${this.currentVerse.chapter}, Verse ${this.currentVerse.verse}` : 'No verse displayed'
-        })
-      });
-      if (!response.ok) throw new Error(`Server error: ${response.status}`);
-      this.dom.reportStatus.textContent = 'Report submitted successfully!';
-      this.dom.reportStatus.className = 'success';
-      this.dom.reportText.value = '';
-      setTimeout(() => {
-        this.toggleModal(false);
-        this.dom.submitReport.disabled = false;
-      }, 2000);
-    } catch (error) {
-      console.error(error);
-      this.dom.reportStatus.textContent = 'Failed to submit report. Please try again.';
-      this.dom.reportStatus.className = 'error';
-      this.dom.submitReport.disabled = false;
-    }
-  }
+# Define Bhagavad Gita chapter and verse limits
+CHAPTER_VERSE_LIMITS = {
+    1: 46, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
+    7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
+    13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
 }
 
-document.addEventListener('DOMContentLoaded', () => new GitaApp());
+VERSES = []
+
+def load_verses():
+    """Load valid verses from CSV file."""
+    csv_path = Path(__file__).parent / 'data' / 'Bhagwad_Gita.csv'
+    verses = []
+    try:
+        with open(csv_path, 'r', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f)
+            required_fields = {'Chapter', 'Verse', 'Shloka', 'Transliteration', 'EngMeaning'}
+            if not required_fields.issubset(set(reader.fieldnames or [])):
+                app.logger.error("CSV file missing required columns.")
+                return []
+            for row in reader:
+                try:
+                    chapter = int(row['Chapter'])
+                    verse = int(row['Verse'])
+                    if chapter in CHAPTER_VERSE_LIMITS and 0 < verse <= CHAPTER_VERSE_LIMITS[chapter]:
+                        verses.append({
+                            'chapter': chapter,
+                            'verse': verse,
+                            'shloka': row['Shloka'].strip(),
+                            'transliteration': row['Transliteration'].strip(),
+                            'meaning': row['EngMeaning'].strip()
+                        })
+                except ValueError:
+                    continue
+    except Exception as e:
+        app.logger.error(f"Error loading verses: {e}")
+    app.logger.info(f"Loaded {len(verses)} verses.")
+    return verses
+
+VERSES = load_verses()
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers."""
+    headers = {
+        'Content-Security-Policy': "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com",
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains'
+    }
+    response.headers.update(headers)
+    return response
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/api/verse')
+def get_verse():
+    if not VERSES:
+        return jsonify({'error': 'No verses available.'}), 500
+    return jsonify(random.choice(VERSES))
+
+@app.route('/report', methods=['POST'])
+def report_issue():
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        if not message or len(message) > 500:
+            return jsonify({'error': 'Invalid message.'}), 400
+        report = {
+            'timestamp': datetime.now().isoformat(),
+            'message': message,
+            'ip': request.remote_addr
+        }
+        report_file = Path(__file__).parent / 'data' / 'reports.csv'
+        report_file.parent.mkdir(parents=True, exist_ok=True)
+        file_exists = report_file.exists()
+        with open(report_file, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=report.keys())
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(report)
+        return jsonify({'success': True})
+    except Exception as e:
+        app.logger.error(f"Report submission failed: {e}")
+        return jsonify({'error': 'Report submission failed.'}), 500
+
+@app.route('/check_url')
+def check_url():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({'ok': False, 'error': 'No URL provided.'}), 400
+    try:
+        resp = requests.head(url, timeout=3)
+        return jsonify({'ok': resp.status_code == 200})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
