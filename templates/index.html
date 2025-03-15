@@ -1,38 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bhagavad Gita Wisdom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bhagavad Gita Wisdom</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>भगवद्गीता</h1>
-            <p>Daily Wisdom</p>
-        </header>
+  <div class="container">
+    <header>
+      <h1>भगवद्गीता</h1>
+      <p>Daily Spiritual Wisdom</p>
+    </header>
 
-        <div class="card">
-            <div class="verse-meta">
-                <span>Chapter <span id="chapter">-</span></span>
-                <span>Verse <span id="verse">-</span></span>
-            </div>
-            <div class="shloka" id="shloka"></div>
-            <div class="transliteration" id="transliteration"></div>
-            <div class="meaning" id="meaning"></div>
-            <!-- Note: The translation may vary depending on the edition -->
-            <p class="note">Note: The translation may vary depending on the edition.</p>
-        </div>
-
-        <div class="controls">
-            <button id="new-verse" class="btn">Get New Verse</button>
-            <button id="explain" class="btn secondary">Deeper Explanation</button>
-        </div>
-
+    <div class="card">
+      <div class="verse-meta">
+        <span>Chapter <span id="chapter">-</span></span>
+        <span>Verse <span id="verse">-</span></span>
+      </div>
+      <div class="shloka" id="shloka"></div>
+      <div class="transliteration" id="transliteration"></div>
+      <div class="meaning" id="meaning"></div>
+      <p class="note">Translation variations may exist between editions.</p>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <div class="controls">
+      <!-- New Verse button appears at the top -->
+      <button id="new-verse" class="btn primary">New Verse</button>
+
+      <!-- Explanation buttons container -->
+      <div class="explanation-buttons">
+        <button id="explain-vedabase" class="btn secondary">Vedabase Explanation</button>
+        <button id="explain-gitaio" class="btn secondary">Gita.io Explanation</button>
+        <!-- New Search YouTube button -->
+        <button id="search-youtube" class="btn accent">Search YouTube</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
