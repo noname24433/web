@@ -3,11 +3,9 @@ import csv
 import random
 from pathlib import Path
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 
-# Chapter-verse validation data
 CHAPTER_VERSE_LIMITS = {
     1: 46, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
     7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
@@ -15,7 +13,6 @@ CHAPTER_VERSE_LIMITS = {
 }
 
 VERSES = []
-
 
 def load_verses():
     csv_path = Path(__file__).parent / 'data' / 'Bhagwad_Gita.csv'
@@ -41,21 +38,17 @@ def load_verses():
         print(f"Error loading verses: {e}")
     return verses
 
-
 VERSES = load_verses()
-
 
 @app.route('/')
 def home():
     return render_template('index.html')
-
 
 @app.route('/api/verse')
 def get_verse():
     if not VERSES:
         return jsonify({'error': 'No verses available'}), 500
     return jsonify(random.choice(VERSES))
-
 
 @app.route('/report', methods=['POST'])
 def submit_report():
@@ -80,7 +73,6 @@ def submit_report():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
