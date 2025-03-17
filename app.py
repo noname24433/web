@@ -30,7 +30,8 @@ def load_verses():
                             'verse': verse,
                             'shloka': row['Shloka'],
                             'transliteration': row['Transliteration'],
-                            'meaning': row['EngMeaning']
+                            # Removed EngMeaning; meaning remains an empty string
+                            'meaning': ""
                         })
                 except ValueError:
                     continue
