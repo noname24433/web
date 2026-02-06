@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 import csv
+import json
 import random
 from pathlib import Path
 from datetime import datetime
@@ -15,28 +16,33 @@ CHAPTER_VERSE_LIMITS = {
 VERSES = []
 
 def load_verses():
-    csv_path = Path(__file__).parent / 'data' / 'Bhagwad_Gita.csv'
     verses = []
-    try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                try:
-                    chapter = int(row['Chapter'])
-                    verse = int(row['Verse'])
+    json_path = Path(__file__).parent / 'bhagavad_gita.json'
+    if json_path.exists():
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            chapters = data.get('chapters', [])
+            for chapter_data in chapters:
+                chapter_number = int(chapter_data.get('number', 0))
+                for verse_data in chapter_data.get('verses', []):
+                    chapter = int(verse_data.get('chapter', chapter_number))
+                    verse = int(verse_data.get('verse', 0))
                     if chapter in CHAPTER_VERSE_LIMITS and 0 < verse <= CHAPTER_VERSE_LIMITS[chapter]:
+                        sanskrit_lines = verse_data.get('sanskrit', [])
+                        translation_lines = verse_data.get('translation', [])
                         verses.append({
                             'chapter': chapter,
                             'verse': verse,
-                            'shloka': row['Shloka'],
-                            'transliteration': row['Transliteration'],
-                            # Removed EngMeaning; meaning remains an empty string
-                            'meaning': ""
+                            'shloka': "\n".join(line.strip() for line in sanskrit_lines if line.strip()),
+                            'transliteration': verse_data.get('transliteration', '').strip(),
+                            'meaning': " ".join(line.strip() for line in translation_lines if line.strip())
                         })
-                except ValueError:
-                    continue
-    except Exception as e:
-        print(f"Error loading verses: {e}")
+            return verses
+        except (OSError, json.JSONDecodeError, ValueError) as e:
+            print(f"Error loading verses from JSON: {e}")
+            return verses
+    print("Error loading verses: bhagavad_gita.json not found.")
     return verses
 
 VERSES = load_verses()
